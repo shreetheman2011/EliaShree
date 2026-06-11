@@ -32,14 +32,8 @@ public class Intake extends SubsystemBase {
 
     //very simple method to return a command, makes it nicer to set in keybinds bc you don't need an instant command in the keybinding
     //you can also just put the intakeMotor.setVoltage() in here if you don't want the other method
-    public Command setIntakeSpeedCMD(double speed){
-        return new InstantCommand(() -> setIntakeSpeed(speed));
-    }
-
-    //for this method, change intakeMotor.set() to intakeMotor.setVoltage()
-    //setVoltage is just more consistent, the set() is duty cycle so when robot power drops, roller speed drops
-    public void setIntakeSpeed(double speed){
-        intakeMotor.setVoltage(speed);
+    public Command setIntakeSpeedCMD(double voltage){
+        return new InstantCommand(() -> intakeMotor.setVoltage(voltage));
     }
 
     //pretty much the same thing as intake speed command just for position, same reason
@@ -61,6 +55,16 @@ public class Intake extends SubsystemBase {
             setIntakePositionCMD(10),
             new InstantCommand(() -> DogLog.logFault("Intaking command")) //makes sure that it runs, logging faults is good b/c it just gives you a count to make sure it runs
         ).withName("Intaking Command"); //the with name helps you keep track of the commands being run, helps debug
+    }
+
+
+    public Command stopIntakingCommand(){
+        return Commands.parallel(
+            setIntakeSpeedCMD(0),
+            setIntakePositionCMD(0),
+            new InstantCommand(() -> DogLog.logFault("Intake stopping command")) 
+
+        ).withName("Intake stopping command");
     }
 
     //if you want, you can store the configs in another file with static methods. very much optional but it can make each subsystem a bit cleaner

@@ -6,6 +6,10 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import dev.doglog.DogLog;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Hopper extends SubsystemBase {
@@ -15,8 +19,26 @@ public class Hopper extends SubsystemBase {
         configureMotors();
     }
 
-    public void setVoltage(double voltage){
-        motor.setVoltage(voltage);
+    public void periodic(){
+        DogLog.log("Hopper Voltage", motor.getMotorVoltage().getValueAsDouble());
+    }
+
+    public Command setVoltageCMD(double voltage){
+        return new InstantCommand(() -> motor.setVoltage(voltage));
+    };
+
+
+      public Command getHoppingCommand (){
+        return Commands.parallel(
+            setVoltageCMD(5), //todo change voltage
+            new InstantCommand(() -> DogLog.logFault("Hopping command")));
+    }
+
+      public Command stopHoppingCommand (){
+        return Commands.parallel(
+            setVoltageCMD(0),
+            new InstantCommand(() -> DogLog.logFault("Stop hopping command")) 
+        );
     }
 
 

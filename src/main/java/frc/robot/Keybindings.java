@@ -4,6 +4,7 @@ import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.hopper.Hopper;
@@ -40,15 +41,7 @@ public class Keybindings {
     */
     public void configureKeybindings(){
         
-        controller.leftTrigger().whileTrue(new InstantCommand(() -> {
-            intake.setIntakePosition(0);
-            intake.setIntakeSpeed(0);
-        })); 
-
-        controller.leftTrigger().onFalse(new InstantCommand(() -> {
-            intake.setIntakePosition(0);
-            intake.setIntakeSpeed(0);
-        }));
+        controller.leftTrigger().onTrue(intake.getIntakingCommand()).onFalse(intake.stopIntakingCommand());
 
         
          
@@ -64,37 +57,28 @@ public class Keybindings {
          */
 
 
-        controller.b().whileTrue(new InstantCommand(()->{
-            hopper.setVoltage(0);
-        }));
+        controller.b().onTrue(hopper.getHoppingCommand()).onFalse(hopper.stopHoppingCommand());
 
-        controller.b().onFalse(new InstantCommand(()->{
-            hopper.setVoltage(0);
-        }));
+    
 
-
-        controller.rightBumper().whileTrue(new InstantCommand(()-> {
-            shooter.setVoltage(0);
-            shooter.setAngle(0);
-            shooter.spinFeeder(0);
-
-
-        }));
-
-        controller.rightBumper().onFalse(new InstantCommand(()-> {
-            shooter.setVoltage(0);
-            shooter.setAngle(0);
-            shooter.spinFeeder(0);
-
-        }));
+        controller.rightBumper().onTrue(shooter.getShootingCMD()).onFalse(shooter.stopShootingCMD());
 
 
 
-        controller.rightTrigger().whileTrue(new InstantCommand(() -> {
-            hopper.setVoltage(0);
-            shooter.setVoltage(0);
-            shooter.setAngle(0);
-            shooter.spinFeeder(0);
-        }));
+        controller.rightTrigger().onTrue(
+            Commands.sequence(
+                shooter.getShootingCMD(),
+                Commands.waitSeconds(0.5),
+                Commands.parallel(
+
+                    hopper.getHoppingCommand(),
+                    intake.getIntakingCommand()
+                )
+            )
+        ).onFalse( Commands.parallel(
+                shooter.stopShootingCMD(),
+                intake.stopIntakingCommand(),
+                hopper.stopHoppingCommand()
+        ));
 }
 }

@@ -9,6 +9,10 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import dev.doglog.DogLog;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Shooter extends SubsystemBase {
@@ -40,11 +44,7 @@ public class Shooter extends SubsystemBase {
     }
 
     public void setVoltage(double voltage){
-
-        //don't get it
-        //no idea what im doing here
         shooterMotorRight.setControl(new Follower(this.shooterMotorLeft.getDeviceID(), MotorAlignmentValue.Opposed));
-
         shooterMotorLeft.setVoltage(voltage);
     }
 
@@ -53,10 +53,38 @@ public class Shooter extends SubsystemBase {
         angleMotor.setControl(motionMagic);
     }
 
-    public void spinFeeder(double voltage ){
-        feederMotor.setVoltage(voltage);
+
+
+    public Command setVoltageCMD(double voltage){
+        return new InstantCommand(() -> setVoltage(voltage));
     }
 
+    public Command setAngleCMD(double pos){
+        return new InstantCommand(() -> setAngle(pos));
+    }
+
+    public Command spinFeederCMD(double voltage){
+        return new InstantCommand(() ->feederMotor.setVoltage(voltage));
+    }
+
+
+
+
+    public Command getShootingCMD (){
+        return Commands.parallel(
+            setVoltageCMD(5),
+            setAngleCMD(1), //todo: change angle, feeder, and shooter main motor voltages 
+            spinFeederCMD(5),
+            new InstantCommand(() -> DogLog.logFault("Shooter command"))).withName("Get shooting command");
+    }
+
+    public Command stopShootingCMD (){
+        return Commands.parallel(
+            setVoltageCMD(0),
+            setAngleCMD(0), 
+            spinFeederCMD(0),
+            new InstantCommand(() -> DogLog.logFault("Stop shooting command"))).withName("Stop Shooting Command");
+    }
 
 
 
