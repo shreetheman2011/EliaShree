@@ -1,6 +1,9 @@
 package frc.robot;
 
+import dev.doglog.DogLog;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.hopper.Hopper;
@@ -19,7 +22,22 @@ public class Keybindings {
         intake = new Intake();
         hopper = new Hopper(); 
         shooter = new Shooter();
+        //the way i've done it in the past, i created the new subsystems in robotContainer and passed it in to keybinds, but this works too
+        //i prefer robot container bc when i add state machines i define the robotManager in robot container so it's easier
+        //whenever you make a new subsystem always make sure that's the only new one you make cuz it wont work if you have multiple (you have a intake in robot container)
+        //idk where to put this but your code doesnt crash in sim so good job
     }
+
+    /*
+    if you want you can use this to pass in subsystems if you wanna make them in robotContainer
+
+    public Keybindings(Intake intake, Hopper hopper, Shooter shooter){
+        this.intake = intake;
+        this.hopper = hopper;
+        this.shooter = shooter;
+    }
+
+    */
     public void configureKeybindings(){
         
         controller.leftTrigger().whileTrue(new InstantCommand(() -> {
@@ -30,7 +48,20 @@ public class Keybindings {
         controller.leftTrigger().onFalse(new InstantCommand(() -> {
             intake.setIntakePosition(0);
             intake.setIntakeSpeed(0);
-        }));    
+        }));
+
+        
+         
+        // controller.leftBumper().onTrue(new InstantCommand(() -> DogLog.logFault("Left Bumper Press"))); look i used this to debug something
+
+        // controller.leftBumper().onTrue(intake.getIntakingCommand())
+        //    .onFalse(intake.getIdleCommand());
+         /* 
+         * example of how to do keybinds with nicer commands, idle command doesnt exist yet but you get the idea
+         * also you can just do .onFalse attatched to the onTrue to make it a little cleaner
+         * 
+         * i would recommend you change whileTrue to onTrue, they're pretty much the same but we use onTrue more so i trust it more
+         */
 
 
         controller.b().whileTrue(new InstantCommand(()->{
@@ -65,9 +96,5 @@ public class Keybindings {
             shooter.setAngle(0);
             shooter.spinFeeder(0);
         }));
-
-
-
-
 }
 }
