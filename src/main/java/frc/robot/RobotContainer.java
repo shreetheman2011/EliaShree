@@ -10,8 +10,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.intake.Intake;
 
 public class RobotContainer {
-  private CommandXboxController controller;
-  private Intake intake;
+
   private Keybindings keybinds;
   public RobotContainer() {
     controller = new CommandXboxController(0);
