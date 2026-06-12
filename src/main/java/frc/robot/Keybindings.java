@@ -39,7 +39,7 @@ public class Keybindings {
     }
 
     */
-    public void configureKeybindings(){
+    public void configureRealKeybindings(){
         
         controller.leftTrigger().onTrue(intake.getIntakingCommand()).onFalse(intake.stopIntakingCommand());
 
@@ -80,5 +80,4 @@ public class Keybindings {
                 intake.stopIntakingCommand(),
                 hopper.stopHoppingCommand()
         ));
-}
-}
+}}

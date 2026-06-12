@@ -30,7 +30,7 @@ public class RobotContainer {
 
     keybinds = new Keybindings();
 
-    keybinds.configureKeybindings();
+    keybinds.configureRealKeybindings();
   }
 
   
