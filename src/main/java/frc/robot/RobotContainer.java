@@ -13,19 +13,7 @@ public class RobotContainer {
 
   private Keybindings keybinds;
   public RobotContainer() {
-    controller = new CommandXboxController(0);
-    intake = new Intake();//this is bad cuz you already made a new intake in keybindings
-    //pick one bruh either this or the one in keybindings
 
-    /*
-     * intake = new Intake();
-     * hopper = new Hopper();
-     * shooter = new Shooter();
-     * 
-     * keybindings = new Keybindings(intake, hopper, shooter);
-     * 
-     * this is how you would make the subsystems in container and pass into keybinds
-     */
 
     keybinds = new Keybindings();
 
