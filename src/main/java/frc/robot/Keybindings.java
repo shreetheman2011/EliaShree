@@ -16,8 +16,11 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.hopper.Hopper;
+import frc.robot.subsystems.hopper.HopperState;
 import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.intake.IntakeState;
 import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.shooter.ShooterState;
 import frc.robot.subsystems.swerve.CommandSwerveDrivetrain;
 
 public class Keybindings {
@@ -81,7 +84,7 @@ public class Keybindings {
 
 
         
-        controller.leftTrigger().onTrue(intake.getIntakingCommand()).onFalse(intake.stopIntakingCommand());
+        controller.leftTrigger().onTrue(intake.setState(IntakeState.INTAKING)).onFalse(intake.setState(IntakeState.INTAKING));
 
         
          
@@ -97,27 +100,26 @@ public class Keybindings {
          */
 
 
-        controller.b().onTrue(hopper.getHoppingCommand()).onFalse(hopper.stopHoppingCommand());
+        controller.b().onTrue(hopper.setState(HopperState.HOPPING)).onFalse(hopper.setState(HopperState.IDLE));
 
     
 
-        controller.rightBumper().onTrue(shooter.getShootingCMD()).onFalse(shooter.stopShootingCMD());
+        controller.rightBumper().onTrue(shooter.setState(ShooterState.SHOOTING)).onFalse(shooter.setState(ShooterState.IDLE));
 
 
 
         controller.rightTrigger().onTrue(
             Commands.sequence(
-                shooter.getShootingCMD(),
+                shooter.setState(ShooterState.SHOOTING),
                 Commands.waitSeconds(0.5),
                 Commands.parallel(
-
-                    hopper.getHoppingCommand(),
-                    intake.getIntakingCommand()
+                    hopper.setState(HopperState.HOPPING),
+                    intake.setState(IntakeState.INTAKING)
                 )
             )
         ).onFalse( Commands.parallel(
-                shooter.stopShootingCMD(),
-                intake.stopIntakingCommand(),
-                hopper.stopHoppingCommand()
+                shooter.setState(ShooterState.IDLE),
+                intake.setState(IntakeState.IDLE),
+                hopper.setState(HopperState.IDLE)
         ));
 }}

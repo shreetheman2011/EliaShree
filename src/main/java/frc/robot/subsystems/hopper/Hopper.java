@@ -28,17 +28,30 @@ public class Hopper extends SubsystemBase {
     };
 
 
-      public Command getHoppingCommand (){
+      public Command getHoppingCommand (double voltage){
         return Commands.parallel(
-            setVoltageCMD(5), //todo change voltage
+            setVoltageCMD(voltage),
             new InstantCommand(() -> DogLog.logFault("Hopping command")));
     }
 
-      public Command stopHoppingCommand (){
+      public Command stopHoppingCommand (double voltage){
         return Commands.parallel(
-            setVoltageCMD(0),
+            setVoltageCMD(voltage),
             new InstantCommand(() -> DogLog.logFault("Stop hopping command")) 
         );
+    }
+
+
+
+    public Command setState(HopperState state){
+        switch(state){
+            case HOPPING:
+                return getHoppingCommand(state.getVoltage());
+            case IDLE:
+                return stopHoppingCommand(state.getVoltage());
+            default:
+                return stopHoppingCommand(0);
+        }
     }
 
 

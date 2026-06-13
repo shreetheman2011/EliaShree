@@ -89,6 +89,20 @@ public class Shooter extends SubsystemBase {
 
 
 
+    public Command setState(ShooterState state){
+        switch(state) {
+            case SHOOTING:
+                return getShootingCMD();
+            case IDLE:
+                return stopShootingCMD();
+            default:
+                return stopShootingCMD();
+        }
+    }
+
+
+
+
     public void configureMotors() {
         angleMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         angleMotorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;

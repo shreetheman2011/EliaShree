@@ -49,19 +49,19 @@ public class Intake extends SubsystemBase {
 
     //this method basically just does what keybinds does so it's a lot easier to do keybinds, just have to call one command to do both
     //you should also make more of these types of methods for other intaking commands (like starting or idle)
-    public Command getIntakingCommand(){
+    public Command getIntakingCommand(double voltage, double pos){
         return Commands.parallel(
-            setIntakeSpeedCMD(5),
-            setIntakePositionCMD(10),
+            setIntakeSpeedCMD(voltage),
+            setIntakePositionCMD(pos),
             new InstantCommand(() -> DogLog.logFault("Intaking command")) //makes sure that it runs, logging faults is good b/c it just gives you a count to make sure it runs
         ).withName("Intaking Command"); //the with name helps you keep track of the commands being run, helps debug
     }
 
 
-    public Command stopIntakingCommand(){
+    public Command stopIntakingCommand(double voltage, double pos){
         return Commands.parallel(
-            setIntakeSpeedCMD(0),
-            setIntakePositionCMD(0),
+            setIntakeSpeedCMD(voltage),
+            setIntakePositionCMD(pos),
             new InstantCommand(() -> DogLog.logFault("Intake stopping command")) 
 
         ).withName("Intake stopping command");
@@ -123,6 +123,30 @@ public class Intake extends SubsystemBase {
 
         pivotMotor.getConfigurator().apply(pivotConfig);
     }
+
+
+    public Command setState (IntakeState state){
+        switch (state) {
+            case INTAKING:
+                return getIntakingCommand(state.getVoltage(), state.getPos());
+            case IDLE:
+                return stopIntakingCommand(state.getVoltage(), state.getPos());
+            default:
+                return stopIntakingCommand(0, 0);
+        }
+    }
+
+
+    // public Command getStateCommand(IntakeState state){
+    //     switch (state){
+    //         case INTAKING:
+    //             return this.getIntakingCommand().withName("Running Intake");
+    //         default:
+    //             return this.stopIntakingCommand();
+    //     }
+    // }
+
+   
 
     //example of how to do some logging, you'll probably want to log more stuff but this is a good start, lets you keep track of the stuff you apply to the motors
     //logging physical stuff on the motors like i did below isn't great for debugging in sim
