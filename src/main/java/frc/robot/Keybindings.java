@@ -8,7 +8,7 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 
 import dev.doglog.DogLog;
-
+import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.hopper.Hopper;
@@ -25,9 +25,11 @@ public class Keybindings {
     private Hopper hopper;
     private Shooter shooter;
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
-    private double MaxAngularRate = RotationsPerSecond.of(1.2).in(RadiansPerSecond);
 
+    private double MaxAngularRate = RotationsPerSecond.of(1.2).in(RadiansPerSecond);
     private RobotManager robotManager;
+
+    private CommandJoystick keyboard = new CommandJoystick(1);
 
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
     .withDeadband(MaxSpeed * 0.2).withRotationalDeadband(MaxAngularRate * 0.2)
@@ -110,4 +112,39 @@ public class Keybindings {
         controller.rightTrigger().onTrue(
          robotManager.setState(RobotState.SHOOTING_WITH_IAH)
         ).onFalse( robotManager.setState(RobotState.IDLE));
-}}
+}
+
+
+    public void configureNoControllerBindings() {
+
+    // Drive controls would still need axes from the Sim GUI.
+    drivetrain.setDefaultCommand(
+        drivetrain.applyRequest(() ->
+            drive.withVelocityX(-keyboard.getY() * MaxSpeed)
+                .withVelocityY(-keyboard.getX() * MaxSpeed)
+                .withRotationalRate(-keyboard.getTwist() * MaxAngularRate * .5)
+        )
+    );
+
+    drivetrain.registerTelemetry(logger::telemeterize);
+
+    // Button 1 = Intake
+    keyboard.button(1)
+        .onTrue(robotManager.setState(RobotState.INTAKING))
+        .onFalse(robotManager.setState(RobotState.IDLE));
+
+    // Button 2 = Hopper
+    keyboard.button(2)
+        .onTrue(robotManager.setState(RobotState.HOPPING))
+        .onFalse(robotManager.setState(RobotState.IDLE));
+
+    // Button 3 = Shooter
+    keyboard.button(3)
+        .onTrue(robotManager.setState(RobotState.JUST_SHOOTING))
+        .onFalse(robotManager.setState(RobotState.IDLE));
+
+    // Button 4 = Shoot + Intake + Hopper
+    keyboard.button(4)
+        .onTrue(robotManager.setState(RobotState.SHOOTING_WITH_IAH))
+        .onFalse(robotManager.setState(RobotState.IDLE));
+    }}
