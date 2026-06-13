@@ -1,5 +1,12 @@
 package frc.robot;
 
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
+
+import com.ctre.phoenix6.swerve.SwerveRequest;
+import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -7,9 +14,11 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.hopper.Hopper;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.swerve.CommandSwerveDrivetrain;
 
 public class Keybindings {
 
@@ -17,6 +26,16 @@ public class Keybindings {
     private Intake intake;
     private Hopper hopper;
     private Shooter shooter;
+    private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
+    private double MaxAngularRate = RotationsPerSecond.of(1.2).in(RadiansPerSecond);
+
+    private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
+    .withDeadband(MaxSpeed * 0.2).withRotationalDeadband(MaxAngularRate * 0.2)
+    .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
+
+    private final Telemetry logger = new Telemetry(MaxSpeed);
+
+    private final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
     public Keybindings(){
         controller = new CommandXboxController(0);
@@ -40,6 +59,27 @@ public class Keybindings {
 
     */
     public void configureRealKeybindings(){
+
+
+
+        //drivetrain stuff
+
+        drivetrain.setDefaultCommand(
+            //executed periodically
+            drivetrain.applyRequest(() -> 
+                drive.withVelocityX(-controller.getLeftY() * MaxSpeed)
+                .withVelocityY(-controller.getLeftX() * MaxSpeed)
+                .withRotationalRate(-controller.getRightX() * MaxAngularRate *.5)
+            )
+        );
+
+        
+
+        drivetrain.registerTelemetry(logger::telemeterize);
+
+
+
+
         
         controller.leftTrigger().onTrue(intake.getIntakingCommand()).onFalse(intake.stopIntakingCommand());
 
