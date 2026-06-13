@@ -22,6 +22,8 @@ import frc.robot.subsystems.intake.IntakeState;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterState;
 import frc.robot.subsystems.swerve.CommandSwerveDrivetrain;
+import frc.robot.utils.RobotManager;
+import frc.robot.utils.RobotState;
 
 public class Keybindings {
 
@@ -31,6 +33,8 @@ public class Keybindings {
     private Shooter shooter;
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
     private double MaxAngularRate = RotationsPerSecond.of(1.2).in(RadiansPerSecond);
+
+    private RobotManager robotManager;
 
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
     .withDeadband(MaxSpeed * 0.2).withRotationalDeadband(MaxAngularRate * 0.2)
@@ -45,6 +49,8 @@ public class Keybindings {
         intake = new Intake();
         hopper = new Hopper(); 
         shooter = new Shooter();
+
+        robotManager = new RobotManager(intake, hopper, shooter);
         //the way i've done it in the past, i created the new subsystems in robotContainer and passed it in to keybinds, but this works too
         //i prefer robot container bc when i add state machines i define the robotManager in robot container so it's easier
         //whenever you make a new subsystem always make sure that's the only new one you make cuz it wont work if you have multiple (you have a intake in robot container)
@@ -84,7 +90,7 @@ public class Keybindings {
 
 
         
-        controller.leftTrigger().onTrue(intake.setState(IntakeState.INTAKING)).onFalse(intake.setState(IntakeState.INTAKING));
+        controller.leftTrigger().onTrue(robotManager.setState(RobotState.INTAKING)).onFalse(robotManager.setState(RobotState.IDLE));
 
         
          
@@ -100,26 +106,15 @@ public class Keybindings {
          */
 
 
-        controller.b().onTrue(hopper.setState(HopperState.HOPPING)).onFalse(hopper.setState(HopperState.IDLE));
+        controller.leftBumper().onTrue(robotManager.setState(RobotState.HOPPING)).onFalse(robotManager.setState(RobotState.IDLE));
 
     
 
-        controller.rightBumper().onTrue(shooter.setState(ShooterState.SHOOTING)).onFalse(shooter.setState(ShooterState.IDLE));
+        controller.rightBumper().onTrue(robotManager.setState(RobotState.JUST_SHOOTING)).onFalse(robotManager.setState(RobotState.IDLE));
 
 
 
         controller.rightTrigger().onTrue(
-            Commands.sequence(
-                shooter.setState(ShooterState.SHOOTING),
-                Commands.waitSeconds(0.5),
-                Commands.parallel(
-                    hopper.setState(HopperState.HOPPING),
-                    intake.setState(IntakeState.INTAKING)
-                )
-            )
-        ).onFalse( Commands.parallel(
-                shooter.setState(ShooterState.IDLE),
-                intake.setState(IntakeState.IDLE),
-                hopper.setState(HopperState.IDLE)
-        ));
+         robotManager.setState(RobotState.SHOOTING_WITH_IAH)
+        ).onFalse( robotManager.setState(RobotState.IDLE));
 }}

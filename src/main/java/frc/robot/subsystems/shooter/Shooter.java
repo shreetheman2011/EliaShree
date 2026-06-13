@@ -3,7 +3,6 @@ package frc.robot.subsystems.shooter;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
-import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
@@ -59,9 +58,19 @@ public class Shooter extends SubsystemBase {
         return new InstantCommand(() -> setVoltage(voltage));
     }
 
-    public Command setAngleCMD(double pos){
-        return new InstantCommand(() -> setAngle(pos));
-    }
+    
+
+    //replaced instant command and stuff in here to make it so that everything waits to shoot until the angle is reached
+    public Command setAngleCMD(double pos) {
+        return Commands.runOnce(() -> setAngle(pos))
+        .andThen(
+            Commands.waitUntil(
+                () -> Math.abs(
+                    angleMotor.getPosition().getValueAsDouble() - pos
+                ) < 0.05
+            )
+        );
+}
 
     public Command spinFeederCMD(double voltage){
         return new InstantCommand(() ->feederMotor.setVoltage(voltage));
@@ -71,9 +80,10 @@ public class Shooter extends SubsystemBase {
 
 
     public Command getShootingCMD (){
-        return Commands.parallel(
-            setVoltageCMD(5),
+        return Commands.sequence(
             setAngleCMD(1), //todo: change angle, feeder, and shooter main motor voltages 
+            setVoltageCMD(5),
+            Commands.waitSeconds(0.5),
             spinFeederCMD(5),
             new InstantCommand(() -> DogLog.logFault("Shooter command"))).withName("Get shooting command");
     }
@@ -122,9 +132,9 @@ public class Shooter extends SubsystemBase {
 
         shooterMotorsConfig.MotorOutput.withInverted(InvertedValue.CounterClockwise_Positive);
 
-        shooterMotorsConfig.TorqueCurrent.PeakForwardTorqueCurrent = .0;
+        shooterMotorsConfig.TorqueCurrent.PeakForwardTorqueCurrent = .0; //todo: check this
         shooterMotorsConfig.TorqueCurrent.PeakReverseTorqueCurrent = -40.0;
-        shooterMotorsConfig.MotorOutput.PeakForwardDutyCycle = 0.0;
+        shooterMotorsConfig.MotorOutput.PeakForwardDutyCycle = 0.0; //todo: check this
         shooterMotorsConfig.MotorOutput.PeakReverseDutyCycle = -1.0;
 
         feederMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
