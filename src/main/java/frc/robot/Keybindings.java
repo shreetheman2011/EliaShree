@@ -85,7 +85,7 @@ public class Keybindings {
 
 
         
-        controller.leftTrigger().onTrue(robotManager.setState(RobotState.INTAKING)).onFalse(robotManager.setState(RobotState.IDLE));
+        controller.leftTrigger().whileTrue(robotManager.setState(RobotState.INTAKING)).whileFalse(robotManager.setState(RobotState.IDLE));
 
         
          
@@ -101,17 +101,17 @@ public class Keybindings {
          */
 
 
-        controller.leftBumper().onTrue(robotManager.setState(RobotState.HOPPING)).onFalse(robotManager.setState(RobotState.IDLE));
+        controller.leftBumper().whileTrue(robotManager.setState(RobotState.HOPPING)).whileFalse(robotManager.setState(RobotState.IDLE));
 
     
 
-        controller.rightBumper().onTrue(robotManager.setState(RobotState.JUST_SHOOTING)).onFalse(robotManager.setState(RobotState.IDLE));
+        controller.rightBumper().whileTrue(robotManager.setState(RobotState.JUST_SHOOTING)).whileFalse(robotManager.setState(RobotState.IDLE));
 
 
 
-        controller.rightTrigger().onTrue(
+        controller.rightTrigger().whileTrue(
          robotManager.setState(RobotState.SHOOTING_WITH_IAH)
-        ).onFalse( robotManager.setState(RobotState.IDLE));
+        ).whileFalse( robotManager.setState(RobotState.IDLE));
 }
 
 
@@ -130,21 +130,21 @@ public class Keybindings {
 
     // Button 1 = Intake
     keyboard.button(1)
-        .onTrue(robotManager.setState(RobotState.INTAKING))
-        .onFalse(robotManager.setState(RobotState.IDLE));
+        .whileTrue(robotManager.setState(RobotState.INTAKING))
+        .whileFalse(robotManager.setState(RobotState.IDLE));
 
     // Button 2 = Hopper
     keyboard.button(2)
-        .onTrue(robotManager.setState(RobotState.HOPPING))
-        .onFalse(robotManager.setState(RobotState.IDLE));
+        .whileTrue(robotManager.setState(RobotState.HOPPING))
+        .whileFalse(robotManager.setState(RobotState.IDLE));
 
     // Button 3 = Shooter
     keyboard.button(3)
-        .onTrue(robotManager.setState(RobotState.JUST_SHOOTING))
-        .onFalse(robotManager.setState(RobotState.IDLE));
+        .whileTrue(robotManager.setState(RobotState.JUST_SHOOTING))
+        .whileFalse(robotManager.setState(RobotState.IDLE));
 
     // Button 4 = Shoot + Intake + Hopper
     keyboard.button(4)
-        .onTrue(robotManager.setState(RobotState.SHOOTING_WITH_IAH))
-        .onFalse(robotManager.setState(RobotState.IDLE));
+        .whileTrue(robotManager.setState(RobotState.SHOOTING_WITH_IAH))
+        .whileFalse(robotManager.setState(RobotState.IDLE));
     }}

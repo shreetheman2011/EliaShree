@@ -35,5 +35,8 @@ public class RobotManager extends SubsystemBase {
     @Override
     public void periodic(){
         DogLog.log("Robot state", robotState);
+        DogLog.log("Intake state from robot manager", robotState.getIntakeState());
+        DogLog.log("Hopper state from robot manager", robotState.getHopperState());
+        DogLog.log("Shooter state from robot manager", robotState.getShooterState());
     }
 }
