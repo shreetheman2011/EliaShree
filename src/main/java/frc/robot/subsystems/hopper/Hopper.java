@@ -15,13 +15,13 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 public class Hopper extends SubsystemBase {
     private TalonFX motor = new TalonFX(12);
 
+    private HopperState hopperState;
+
     public Hopper(){
         configureMotors();
     }
 
-    public void periodic(){
-        DogLog.log("Hopper Voltage", motor.getMotorVoltage().getValueAsDouble());
-    }
+
 
     public Command setVoltageCMD(double voltage){
         return new InstantCommand(() -> motor.setVoltage(voltage));
@@ -44,6 +44,7 @@ public class Hopper extends SubsystemBase {
 
 
     public Command setState(HopperState state){
+        this.hopperState = state;
         switch(state){
             case HOPPING:
                 return getHoppingCommand(state.getVoltage());
@@ -70,5 +71,13 @@ public class Hopper extends SubsystemBase {
         config.CurrentLimits.SupplyCurrentLimit = 20;
 
         motor.getConfigurator().apply(config);
+    }
+
+
+    @Override
+    public void periodic (){
+        DogLog.log("Hopper Voltage", motor.getMotorVoltage().getValueAsDouble());
+
+        DogLog.log("Hopper state", hopperState);
     }
 }

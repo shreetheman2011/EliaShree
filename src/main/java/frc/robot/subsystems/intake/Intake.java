@@ -21,6 +21,8 @@ public class Intake extends SubsystemBase {
     private TalonFXConfiguration intakeConfig = new TalonFXConfiguration();
     private TalonFXConfiguration pivotConfig = new TalonFXConfiguration();
     private MotionMagicVoltage motionMagicController = new MotionMagicVoltage(0);
+    private IntakeState intakeState;
+    
     
 
 
@@ -126,6 +128,7 @@ public class Intake extends SubsystemBase {
 
 
     public Command setState (IntakeState state){
+        this.intakeState = state;
         switch (state) {
             case INTAKING:
                 return getIntakingCommand(state.getVoltage(), state.getPos());
@@ -155,5 +158,6 @@ public class Intake extends SubsystemBase {
     public void periodic(){
         DogLog.log("Intake Voltage", intakeMotor.getMotorVoltage().getValueAsDouble());
         DogLog.log("Intake Pivot Position", pivotMotor.getPosition().getValueAsDouble());
+        DogLog.log("Intake state", intakeState);
     }
 }

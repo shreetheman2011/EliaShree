@@ -25,6 +25,7 @@ public class Shooter extends SubsystemBase {
     private TalonFXConfiguration angleMotorConfig;
     private TalonFXConfiguration shooterMotorsConfig;
     private TalonFXConfiguration feederMotorConfig;
+    private ShooterState shooterState;
 
 
     public Shooter(){
@@ -100,6 +101,7 @@ public class Shooter extends SubsystemBase {
 
 
     public Command setState(ShooterState state){
+        this.shooterState = state;
         switch(state) {
             case SHOOTING:
                 return getShootingCMD();
@@ -145,5 +147,10 @@ public class Shooter extends SubsystemBase {
         shooterMotorLeft.getConfigurator().apply(shooterMotorsConfig);
         shooterMotorRight.getConfigurator().apply(shooterMotorsConfig);
 
+    }
+
+    @Override
+    public void periodic(){
+        DogLog.log("Shooter state", shooterState);
     }
 }

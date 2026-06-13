@@ -1,6 +1,8 @@
 package frc.robot.utils;
 
+import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.hopper.Hopper;
@@ -21,11 +23,17 @@ public class RobotManager extends SubsystemBase {
     };
 
     public Command setState(RobotState state){
-        return new InstantCommand(() -> {
-            intake.setState(state.getIntakeState());
-            hopper.setState(state.getHopperState());
-            shooter.setState(state.getShooterState());
-            robotState = state;
-        });
+        return Commands.parallel(
+            intake.setState(state.getIntakeState()),
+            hopper.setState(state.getHopperState()),
+            shooter.setState(state.getShooterState()),
+            new InstantCommand(() -> this.robotState = state)
+
+        );
+    }
+
+    @Override
+    public void periodic(){
+        DogLog.log("Robot state", robotState);
     }
 }
