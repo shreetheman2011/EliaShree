@@ -31,6 +31,7 @@ public class RobotContainer {
   
 
   public RobotContainer() {
+    //decided to change all subsystem inits here for easier usage of state machines for auto named commands
     intake = new Intake();
     hopper = new Hopper();
     shooter = new Shooter();
@@ -45,6 +46,8 @@ public class RobotContainer {
     } else {
       keybinds.configureRealKeybindings();
     }
+
+    //checks if we r in sim before configuring real bindings
 
 
 
