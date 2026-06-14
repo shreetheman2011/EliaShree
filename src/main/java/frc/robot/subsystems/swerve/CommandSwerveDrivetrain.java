@@ -11,11 +11,13 @@ import com.ctre.phoenix6.sim.Pigeon2SimState;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
-// import com.pathplanner.lib.auto.AutoBuilder;
-// import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.auto.AutoBuilder;
+
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.config.PIDConstants;
 import edu.wpi.first.math.geometry.Twist2d;
-// import com.pathplanner.lib.config.RobotConfig;
-// import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
@@ -144,7 +146,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         if (Utils.isSimulation()) {
             startSimThread();
         }
-        // configureAutoBuilder();
+
+        configureAutoBuilder();
     }
 
     /**
@@ -169,7 +172,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         if (Utils.isSimulation()) {
             startSimThread();
         }
-        // configureAutoBuilder();
+        configureAutoBuilder();
     }
 
     /**
@@ -202,7 +205,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         if (Utils.isSimulation()) {
             startSimThread();
         }
-        // configureAutoBuilder();
+        configureAutoBuilder();
     }
 
     /**
@@ -236,6 +239,44 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     public Command sysIdDynamic(SysIdRoutine.Direction direction) {
         return m_sysIdRoutineToApply.dynamic(direction);
     }
+
+    public void configureAutoBuilder() {
+    System.out.println("ENTERED CONFIGURE AUTO BUILDER");
+
+    try {
+        RobotConfig config = RobotConfig.fromGUISettings();
+
+        System.out.println("ROBOT CONFIG LOADED");
+
+      AutoBuilder.configure(
+                () -> getState().Pose,   // Supplier of current robot pose
+                this::resetPose,         // Consumer for seeding pose against auto
+                () -> getState().Speeds, // Supplier of current robot speeds
+                // Consumer of ChassisSpeeds and feedforwards to drive the robot
+                (speeds, feedforwards) -> setControl(
+                    m_pathApplyRobotSpeeds.withSpeeds(ChassisSpeeds.discretize(speeds, 0.020))
+                        .withWheelForceFeedforwardsX(feedforwards.robotRelativeForcesXNewtons())
+                        .withWheelForceFeedforwardsY(feedforwards.robotRelativeForcesYNewtons())
+                ),
+
+                new PPHolonomicDriveController(
+                    new PIDConstants(10
+                    , 0.5, 1.3), 
+                    new PIDConstants(5)
+                ),
+                config,
+                () -> false,
+
+                this
+            );
+
+        System.out.println("AUTO BUILDER CONFIGURED");
+
+    } catch (Exception e) {
+        System.out.println("AUTO BUILDER FAILED");
+        e.printStackTrace();
+    }
+}
 
     // public void configureAutoBuilder(){
     //     RobotConfig config;

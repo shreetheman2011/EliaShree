@@ -37,15 +37,15 @@ public class Keybindings {
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
-    private final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+    private final CommandSwerveDrivetrain drivetrain;
 
-    public Keybindings(){
+    public Keybindings(Intake intake, Hopper hopper, Shooter shooter, RobotManager robotManager, CommandSwerveDrivetrain drivetrain){
         controller = new CommandXboxController(0);
-        intake = new Intake();
-        hopper = new Hopper(); 
-        shooter = new Shooter();
-
-        robotManager = new RobotManager(intake, hopper, shooter);
+        this.intake = intake;
+        this.hopper = hopper;
+        this.shooter = shooter;
+        this.drivetrain = drivetrain;
+        this.robotManager=robotManager;
         //the way i've done it in the past, i created the new subsystems in robotContainer and passed it in to keybinds, but this works too
         //i prefer robot container bc when i add state machines i define the robotManager in robot container so it's easier
         //whenever you make a new subsystem always make sure that's the only new one you make cuz it wont work if you have multiple (you have a intake in robot container)
