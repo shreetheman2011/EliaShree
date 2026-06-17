@@ -29,7 +29,7 @@ public class RobotContainer {
   private Shooter shooter;
   private Vision vision;
   private RobotManager robotManager;
-  private final CommandSwerveDrivetrain drivetrain = new CommandSwerveDrivetrain(vision, TunerConstants.DrivetrainConstants, TunerConstants.FrontLeft, TunerConstants.FrontRight, TunerConstants.BackLeft, TunerConstants.BackRight);
+  private final CommandSwerveDrivetrain drivetrain; 
   
 
   public RobotContainer() {
@@ -39,6 +39,7 @@ public class RobotContainer {
     shooter = new Shooter();
     robotManager = new RobotManager(intake, hopper, shooter);
     vision = new Vision();
+    drivetrain = new CommandSwerveDrivetrain(vision, TunerConstants.DrivetrainConstants, TunerConstants.FrontLeft, TunerConstants.FrontRight, TunerConstants.BackLeft, TunerConstants.BackRight);
 
     keybinds = new Keybindings(intake, hopper, shooter, robotManager, drivetrain, vision);
 
@@ -62,14 +63,14 @@ public class RobotContainer {
     robotManager.setState(RobotState.INTAKING)
 );
 
-NamedCommands.registerCommand("shoot",
-    robotManager.setState(RobotState.SHOOTING_WITH_IAH)
-);
+  NamedCommands.registerCommand("shoot",
+      robotManager.setState(RobotState.SHOOTING_WITH_IAH)
+  );
 
-NamedCommands.registerCommand("setIdle",
-    robotManager.setState(RobotState.IDLE)
-);
-  }
+  NamedCommands.registerCommand("setIdle",
+      robotManager.setState(RobotState.IDLE)
+  );
+}
   
 
   public Command getAutonomousCommand() {
