@@ -118,7 +118,10 @@ public class Keybindings {
         controller.rightTrigger().whileTrue(
          robotManager.setState(RobotState.SHOOTING_WITH_IAH)
         ).whileFalse( robotManager.setState(RobotState.IDLE));
-}
+
+        controller.y().whileTrue(robotManager.setState(RobotState.AUTO_SHOOTING)
+        ).whileFalse(robotManager.setState(RobotState.IDLE));
+    }
 
 
     public void configureNoControllerBindings() {

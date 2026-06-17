@@ -1,5 +1,9 @@
 package frc.robot.subsystems.shooter;
 
+import static edu.wpi.first.units.Units.Rotation;
+
+import java.util.Optional;
+
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
@@ -9,10 +13,21 @@ import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import dev.doglog.DogLog;
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.shooter.ShotCalculator.ShooterData;
+import frc.robot.subsystems.vision.Vision;
+import frc.robot.subsystems.vision.Vision.VisionMeasurement;
 
 public class Shooter extends SubsystemBase {
     private TalonFX shooterMotorLeft;
@@ -26,13 +41,21 @@ public class Shooter extends SubsystemBase {
     private TalonFXConfiguration shooterMotorsConfig;
     private TalonFXConfiguration feederMotorConfig;
     private ShooterState shooterState;
+    private Vision vision;
+    
 
 
-    public Shooter(){
+    private ShotCalculator calculator = new ShotCalculator();
+
+
+
+
+    public Shooter(Vision vision){
         shooterMotorLeft=new TalonFX(15);
         shooterMotorRight = new TalonFX(16);
         angleMotor = new TalonFX(14);
         feederMotor = new TalonFX(13);
+        this.vision = vision;
 
         motionMagic = new MotionMagicVoltage(0);
         angleMotorConfig = new TalonFXConfiguration();
@@ -44,9 +67,9 @@ public class Shooter extends SubsystemBase {
     }
 
     public void setVoltage(double voltage){
-        shooterMotorRight.setControl(new Follower(this.shooterMotorLeft.getDeviceID(), MotorAlignmentValue.Opposed));
         shooterMotorLeft.setVoltage(voltage);
     }
+    //shooter motor right doesnt need to be called because it is set as a follower motor in configuremotors
 
     public void setAngle(double pos){
         motionMagic.withPosition(pos);
@@ -99,6 +122,79 @@ public class Shooter extends SubsystemBase {
 
 
 
+    public Command getAutoShootingCMD(){
+        return Commands.sequence(
+            Commands.runOnce(() -> {
+                VisionMeasurement measurement = this.vision.getVisionMeasurement();
+                double distanceMeters = 2.5;
+
+                if(measurement !=null && measurement.pose != null){
+                    try {
+                    AprilTagFieldLayout fieldLayout = AprilTagFields.k2026RebuiltAndymark.loadAprilTagLayoutField();
+
+                    Optional<Alliance> alliance = DriverStation.getAlliance();
+
+                    int hubTargetTagID = 25;
+                    if(alliance.isPresent() && alliance.get() == Alliance.Red ){
+                        hubTargetTagID = 10;
+                    }
+
+                    Optional<Pose3d> targetPose = fieldLayout.getTagPose(hubTargetTagID);
+                
+
+                    if (targetPose.isPresent()) {
+                        Pose2d hubTarget = targetPose.get().toPose2d();
+                        distanceMeters = measurement.pose.getTranslation().getDistance(hubTarget.getTranslation());
+                    }
+                    } catch (Exception e){
+                        distanceMeters = 2.5;
+                    }
+                }
+
+                ShooterData setpoint = calculator.getShooterSetpoint(distanceMeters);
+
+                double targetRotations = setpoint.getRotations();
+                double targetRPS = setpoint.getRPS();
+
+                double targetVoltage = (targetRPS / 80.0) * 12.0;
+
+                setAngle(targetRotations);
+                setVoltage(targetVoltage);
+            }),
+
+        
+
+            //wait for angle to reach
+
+            Commands.waitUntil(() -> {
+                VisionMeasurement measurement = this.vision.getVisionMeasurement();
+                double checkDistance = 2.5;
+
+                if(measurement != null && measurement.pose !=null) {
+                    try {
+                        AprilTagFieldLayout layout = AprilTagFields.k2026RebuiltAndymark.loadAprilTagLayoutField();
+                        int tagId = (DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red) ? 10 : 25;
+                        checkDistance = layout.getTagPose(tagId).map(p -> measurement.pose.getTranslation().getDistance(p.toPose2d().getTranslation())).orElse(2.5);
+
+                    } catch(Exception e) {};
+                }
+
+                return Math.abs(angleMotor.getPosition().getValueAsDouble() - calculator.getShooterSetpoint(checkDistance).getRotations()) < 0.05;
+            }),
+
+
+
+            Commands.waitSeconds(0.5),
+
+            spinFeederCMD(5),
+            new InstantCommand(() -> DogLog.logFault("Auto shooter"))
+
+
+        ).withName("Auto shooting command");
+    }
+
+
+
 
     public Command setState(ShooterState state){
         this.shooterState = state;
@@ -107,6 +203,8 @@ public class Shooter extends SubsystemBase {
                 return getShootingCMD();
             case IDLE:
                 return stopShootingCMD();
+            case AUTO_SHOOTING:
+                return getAutoShootingCMD();
             default:
                 return stopShootingCMD();
         }
@@ -146,6 +244,9 @@ public class Shooter extends SubsystemBase {
 
         shooterMotorLeft.getConfigurator().apply(shooterMotorsConfig);
         shooterMotorRight.getConfigurator().apply(shooterMotorsConfig);
+
+        shooterMotorRight.setControl(new Follower(this.shooterMotorLeft.getDeviceID(), MotorAlignmentValue.Opposed));
+
 
     }
 
