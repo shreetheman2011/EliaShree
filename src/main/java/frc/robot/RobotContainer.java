@@ -16,6 +16,7 @@ import frc.robot.subsystems.hopper.Hopper;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.swerve.CommandSwerveDrivetrain;
+import frc.robot.subsystems.vision.Vision;
 import frc.robot.utils.RobotManager;
 import frc.robot.utils.RobotState;
 
@@ -26,8 +27,9 @@ public class RobotContainer {
   private Intake intake;
   private Hopper hopper;
   private Shooter shooter;
+  private Vision vision;
   private RobotManager robotManager;
-  private final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+  private final CommandSwerveDrivetrain drivetrain = new CommandSwerveDrivetrain(vision, TunerConstants.DrivetrainConstants, TunerConstants.FrontLeft, TunerConstants.FrontRight, TunerConstants.BackLeft, TunerConstants.BackRight);
   
 
   public RobotContainer() {
@@ -36,8 +38,9 @@ public class RobotContainer {
     hopper = new Hopper();
     shooter = new Shooter();
     robotManager = new RobotManager(intake, hopper, shooter);
+    vision = new Vision();
 
-    keybinds = new Keybindings(intake, hopper, shooter, robotManager, drivetrain);
+    keybinds = new Keybindings(intake, hopper, shooter, robotManager, drivetrain, vision);
 
     registerAutoCommands();
 
