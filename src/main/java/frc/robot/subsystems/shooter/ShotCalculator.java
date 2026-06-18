@@ -38,8 +38,8 @@ public class ShotCalculator {
 
     public final InterpolatingTreeMap<Double, ShooterData> targetMap;
 
-    private double minDistance = Double.MAX_VALUE;
-    private double maxDistance = Double.MIN_VALUE;
+    private double minDistance = 1.5; //meters
+    private double maxDistance = 6.5; //meters
 
     public ShotCalculator() {
            this.targetMap = new InterpolatingTreeMap<Double, ShooterData>(
