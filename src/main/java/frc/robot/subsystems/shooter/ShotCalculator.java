@@ -11,6 +11,7 @@ import edu.wpi.first.math.interpolation.Interpolatable;
 import edu.wpi.first.math.interpolation.InterpolatingTreeMap;
 import edu.wpi.first.math.util.Units;
 
+
 public class ShotCalculator {
 
     //breakdown of everything on the bottom
