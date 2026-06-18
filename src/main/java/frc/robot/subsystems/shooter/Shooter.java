@@ -103,7 +103,7 @@ public class Shooter extends SubsystemBase {
 
     public Command getShootingCMD (){
         return Commands.sequence(
-            setAngleCMD(1), //todo: change angle, feeder, and shooter main motor voltages 
+            setAngleCMD(0.5), //todo: change angle, feeder, and shooter main motor voltages 
             setVoltageCMD(5),
             Commands.waitSeconds(0.5),
             spinFeederCMD(5),
