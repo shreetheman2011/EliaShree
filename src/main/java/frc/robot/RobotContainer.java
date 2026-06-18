@@ -76,4 +76,9 @@ public class RobotContainer {
   public Command getAutonomousCommand() {
         return new PathPlannerAuto("depotShoot");
     }  
+
+
+    public Vision getVision(){
+        return vision;
+    }
 }

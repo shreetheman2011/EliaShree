@@ -71,4 +71,14 @@ public class Vision extends SubsystemBase {
 
     };
 
+    public void turnOffCameras(){
+        LimelightHelpers.setCropWindow(limelight1, -0.001, 0.001, -0.001, 0.001);
+        LimelightHelpers.setCropWindow(limelight2, -0.001, 0.001, -0.001, 0.001);
+    }
+
+    public void turnOnCameras(){
+        LimelightHelpers.setCropWindow(limelight1, -1, 1, -1, 1);
+        LimelightHelpers.setCropWindow(limelight2, -1, 1, -1, 1);
+    }
+
 }
