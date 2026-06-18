@@ -144,19 +144,32 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
      * @param modules               Constants for each specific module
      */
     public CommandSwerveDrivetrain(
-        Vision vision,
-        SwerveDrivetrainConstants drivetrainConstants,
-        SwerveModuleConstants<?, ?, ?>... modules
-    ) {
-        super(drivetrainConstants, modules);
-        this.vision = vision;
-        if (Utils.isSimulation()) {
-            startSimThread();
-        }
+    SwerveDrivetrainConstants drivetrainConstants,
+    SwerveModuleConstants<?, ?, ?>... modules
+) {
+    super(drivetrainConstants, modules);
 
-        configureAutoBuilder();
+    if (Utils.isSimulation()) {
+        startSimThread();
     }
 
+    configureAutoBuilder();
+}
+  public CommandSwerveDrivetrain(
+    Vision vision,
+    SwerveDrivetrainConstants drivetrainConstants,
+    SwerveModuleConstants<?, ?, ?>... modules
+) {
+    super(drivetrainConstants, modules);
+
+    this.vision = vision;
+
+    if (Utils.isSimulation()) {
+        startSimThread();
+    }
+
+    configureAutoBuilder();
+}
     /**
      * Constructs a CTRE SwerveDrivetrain using the specified constants.
      * <p>

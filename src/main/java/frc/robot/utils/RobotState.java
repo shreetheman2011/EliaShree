@@ -9,8 +9,8 @@ public enum RobotState {
     IDLE(IntakeState.IDLE, HopperState.IDLE, ShooterState.IDLE),
     HOPPING(IntakeState.IDLE, HopperState.HOPPING, ShooterState.IDLE),
     JUST_SHOOTING(IntakeState.IDLE, HopperState.IDLE, ShooterState.SHOOTING),
-    SHOOTING_WITH_IAH(IntakeState.INTAKING, HopperState.HOPPING, ShooterState.SHOOTING); 
-    //IAH = intake and hopper
+    SHOOTING_WITH_IAH(IntakeState.INTAKING, HopperState.HOPPING, ShooterState.SHOOTING),    //IAH = intake and hopper
+    AUTO_SHOOTING(IntakeState.INTAKING, HopperState.HOPPING, ShooterState.AUTO_SHOOTING);
 
 
     private IntakeState intakeState;

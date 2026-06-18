@@ -1,5 +1,7 @@
 package frc.robot.subsystems.shooter;
 
+import java.util.Optional;
+
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
@@ -9,10 +11,18 @@ import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import dev.doglog.DogLog;
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.shooter.ShotCalculator.ShooterData;
+import frc.robot.subsystems.swerve.CommandSwerveDrivetrain;
 
 public class Shooter extends SubsystemBase {
     private TalonFX shooterMotorLeft;
@@ -26,9 +36,11 @@ public class Shooter extends SubsystemBase {
     private TalonFXConfiguration shooterMotorsConfig;
     private TalonFXConfiguration feederMotorConfig;
     private ShooterState shooterState;
+    private ShotCalculator calculator;
+    private CommandSwerveDrivetrain drivetrain;
 
 
-    public Shooter(){
+    public Shooter( CommandSwerveDrivetrain drivetrain){
         shooterMotorLeft=new TalonFX(15);
         shooterMotorRight = new TalonFX(16);
         angleMotor = new TalonFX(14);
@@ -38,6 +50,9 @@ public class Shooter extends SubsystemBase {
         angleMotorConfig = new TalonFXConfiguration();
         shooterMotorsConfig = new TalonFXConfiguration();
         feederMotorConfig = new TalonFXConfiguration();
+        this.drivetrain = drivetrain;
+
+        calculator = new ShotCalculator();
 
         configureMotors();
 
@@ -99,6 +114,73 @@ public class Shooter extends SubsystemBase {
 
 
 
+    public Command getAutoShootingCMD(){
+        return Commands.sequence(
+            Commands.runOnce(() -> {
+                Pose2d robotPose = drivetrain.getState().Pose;
+                double distanceMeters = 2.5;
+
+                try {
+                    AprilTagFieldLayout layout = AprilTagFields.k2026RebuiltAndymark.loadAprilTagLayoutField();
+
+                    int tagId = (DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red) ? 10 : 25;
+
+                    Optional<Pose3d> tagPose3d = layout.getTagPose(tagId);
+
+                    if(tagPose3d.isPresent()){
+                        Pose2d tagPose = tagPose3d.get().toPose2d();
+
+                        distanceMeters = robotPose.getTranslation().getDistance(tagPose.getTranslation());
+                    }
+                } catch (Exception e) {
+                    distanceMeters= 2.5;
+                }
+
+                ShooterData setpoint = calculator.getShooterSetpoint(distanceMeters);
+
+                double targetRotations = setpoint.getRotations(); //sounds confusing, but its for angle not rps lol
+                double targetRPS = setpoint.getRPS();
+                double targetVoltage = (targetRPS / 80.0) * 12.0;
+
+                setAngle(targetRotations);
+                setVoltage(targetVoltage);
+            }),
+
+            Commands.waitUntil(() -> {
+
+                Pose2d robotPose = drivetrain.getState().Pose;
+                double distanceMeters  = 2.5;
+
+                try {
+                    AprilTagFieldLayout layout = AprilTagFields.k2026RebuiltAndymark.loadAprilTagLayoutField();
+
+                    int tagId = (DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red) ? 10 : 25;
+
+                    Optional<Pose3d> tagPose3d = layout.getTagPose(tagId);
+
+                    if(tagPose3d.isPresent()){
+                        Pose2d tagPose = tagPose3d.get().toPose2d();
+
+                        distanceMeters = robotPose.getTranslation().getDistance(tagPose.getTranslation());
+                    }
+                } catch (Exception e) {
+                    distanceMeters= 2.5;
+                }
+
+                double targetRotations = calculator.getShooterSetpoint(distanceMeters).getRotations();
+
+                return Math.abs(angleMotor.getPosition().getValueAsDouble() - targetRotations) < 0.05;
+            }),
+
+            Commands.waitSeconds(0.5),
+            spinFeederCMD(5),
+            new InstantCommand(() -> DogLog.logFault("Auto shooter"))
+
+        ).withName("Auto shooting cmd");
+    }
+
+
+
 
     public Command setState(ShooterState state){
         this.shooterState = state;
@@ -107,6 +189,8 @@ public class Shooter extends SubsystemBase {
                 return getShootingCMD();
             case IDLE:
                 return stopShootingCMD();
+            case AUTO_SHOOTING:
+                return getAutoShootingCMD();
             default:
                 return stopShootingCMD();
         }

@@ -35,9 +35,9 @@ public class RobotContainer {
     //decided to change all subsystem inits here for easier usage of state machines for auto named commands
     intake = new Intake();
     hopper = new Hopper();
-    shooter = new Shooter();
-    robotManager = new RobotManager(intake, hopper, shooter);
     vision = new Vision();
+    shooter = new Shooter(drivetrain);
+    robotManager = new RobotManager(intake, hopper, shooter);
 
     keybinds = new Keybindings(intake, hopper, shooter, robotManager, drivetrain, vision);
 
