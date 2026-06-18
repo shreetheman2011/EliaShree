@@ -15,6 +15,7 @@ import frc.robot.subsystems.hopper.Hopper;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.swerve.CommandSwerveDrivetrain;
+import frc.robot.subsystems.vision.Vision;
 import frc.robot.utils.RobotManager;
 import frc.robot.utils.RobotState;
 
@@ -24,6 +25,7 @@ public class Keybindings {
     private Intake intake;
     private Hopper hopper;
     private Shooter shooter;
+    private Vision vision;
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
 
     private double MaxAngularRate = RotationsPerSecond.of(1.2).in(RadiansPerSecond);
@@ -39,13 +41,14 @@ public class Keybindings {
 
     private final CommandSwerveDrivetrain drivetrain;
 
-    public Keybindings(Intake intake, Hopper hopper, Shooter shooter, RobotManager robotManager, CommandSwerveDrivetrain drivetrain){
+    public Keybindings(Intake intake, Hopper hopper, Shooter shooter, RobotManager robotManager, CommandSwerveDrivetrain drivetrain, Vision vision){
         controller = new CommandXboxController(0);
         this.intake = intake;
         this.hopper = hopper;
         this.shooter = shooter;
         this.drivetrain = drivetrain;
         this.robotManager=robotManager;
+        this.vision = vision;
         //the way i've done it in the past, i created the new subsystems in robotContainer and passed it in to keybinds, but this works too
         //i prefer robot container bc when i add state machines i define the robotManager in robot container so it's easier
         //whenever you make a new subsystem always make sure that's the only new one you make cuz it wont work if you have multiple (you have a intake in robot container)

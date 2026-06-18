@@ -2,7 +2,10 @@ package frc.robot.subsystems.swerve;
 
 import static edu.wpi.first.units.Units.*;
 
+import java.util.Optional;
 import java.util.function.Supplier;
+
+import org.photonvision.EstimatedRobotPose;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
@@ -40,6 +43,7 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.generated.TunerConstants;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
+import frc.robot.subsystems.vision.Vision;
 
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements
@@ -52,6 +56,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
     private SwerveDrivePoseEstimator limelightPose;
     private Field2d field = new Field2d();
+    private Vision vision;
 
     /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
     private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kZero;
@@ -139,10 +144,12 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
      * @param modules               Constants for each specific module
      */
     public CommandSwerveDrivetrain(
+        Vision vision,
         SwerveDrivetrainConstants drivetrainConstants,
         SwerveModuleConstants<?, ?, ?>... modules
     ) {
         super(drivetrainConstants, modules);
+        this.vision = vision;
         if (Utils.isSimulation()) {
             startSimThread();
         }
@@ -329,6 +336,18 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 );
                 m_hasAppliedOperatorPerspective = true;
             });
+        }
+
+//double check that checking if null like this works(wasnt in docs)
+        Optional<EstimatedRobotPose> pose1 = vision.getEstimatedPose1();
+        Optional<EstimatedRobotPose> pose2 = vision.getEstimatedPose2();
+        if(pose1.isPresent()) {
+            EstimatedRobotPose estimate = pose1.get();
+            addVisionMeasurement(estimate.estimatedPose.toPose2d(), estimate.timestampSeconds);
+        }
+        if(pose2.isPresent()) {
+            EstimatedRobotPose estimate = pose2.get();
+            addVisionMeasurement(estimate.estimatedPose.toPose2d(), estimate.timestampSeconds);
         }
 
 
