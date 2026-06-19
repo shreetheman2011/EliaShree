@@ -87,8 +87,7 @@ public class Vision extends SubsystemBase {
         PhotonPipelineResult result = camera2.getLatestResult();
                 if (!result.hasTargets()) {
             return Optional.empty();
-        } else if (result.getTargets().size() < 2) {
-            return Optional.empty();
+   
         } else if (result.getBestTarget().getPoseAmbiguity() > 0.2) {
             return Optional.empty();
         }
