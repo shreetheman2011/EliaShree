@@ -1,6 +1,7 @@
 package frc.robot.subsystems.swerve;
 
-import static edu.wpi.first.units.Units.*;
+import static edu.wpi.first.units.Units.Second;
+import static edu.wpi.first.units.Units.Volts;
 
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -9,21 +10,15 @@ import org.photonvision.EstimatedRobotPose;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
-import com.ctre.phoenix6.hardware.Pigeon2;
-import com.ctre.phoenix6.sim.Pigeon2SimState;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
-
-import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
-import edu.wpi.first.math.geometry.Twist2d;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 
 import edu.wpi.first.math.Matrix;
-import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -36,12 +31,9 @@ import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.generated.TunerConstants;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 import frc.robot.subsystems.vision.Vision;
 
@@ -351,16 +343,55 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             });
         }
 
-//double check that checking if null like this works(wasnt in docs)
         Optional<EstimatedRobotPose> pose1 = vision.getEstimatedPose1();
         Optional<EstimatedRobotPose> pose2 = vision.getEstimatedPose2();
-        if(pose1.isPresent()) {
-            EstimatedRobotPose estimate = pose1.get();
-            addVisionMeasurement(estimate.estimatedPose.toPose2d(), estimate.timestampSeconds);
+
+        if (pose1.isPresent() && pose2.isPresent()) {
+            EstimatedRobotPose est1 = pose1.get();
+            EstimatedRobotPose est2 = pose2.get();
+
+            //apparently 20ms is same frame
+            if (Math.abs(est1.timestampSeconds - est2.timestampSeconds) < 0.02) {
+
+                Pose2d p1 = est1.estimatedPose.toPose2d();
+                Pose2d p2 = est2.estimatedPose.toPose2d();
+                Rotation2d avgRotation = p1.getRotation().interpolate(p2.getRotation(), 0.5);
+
+                Pose2d avgPose = new Pose2d(
+                    (p1.getX() + p2.getX()) / 2,
+                    (p1.getY() + p2.getY()) / 2,
+                    avgRotation
+                );
+
+                double avgTimestamp = (est1.timestampSeconds + est2.timestampSeconds) / 2.0;
+
+                addVisionMeasurement(avgPose, avgTimestamp);
+
+            } else {
+                addVisionMeasurement(
+                    est1.estimatedPose.toPose2d(),
+                    est1.timestampSeconds
+                );
+
+                addVisionMeasurement(
+                    est2.estimatedPose.toPose2d(),
+                    est2.timestampSeconds
+                );
+            } 
         }
-        if(pose2.isPresent()) {
-            EstimatedRobotPose estimate = pose2.get();
-            addVisionMeasurement(estimate.estimatedPose.toPose2d(), estimate.timestampSeconds);
+        else if (pose1.isPresent()) {
+            EstimatedRobotPose est = pose1.get();
+            addVisionMeasurement(
+                est.estimatedPose.toPose2d(),
+                est.timestampSeconds
+            );
+        }
+        else if (pose2.isPresent()) {
+            EstimatedRobotPose est = pose2.get();
+            addVisionMeasurement(
+                est.estimatedPose.toPose2d(),
+                est.timestampSeconds
+            );
         }
 
 
