@@ -1,6 +1,7 @@
 package frc.robot.subsystems.vision;
 
 
+import java.util.List;
 import java.util.Optional;
 
 import org.photonvision.EstimatedRobotPose;
@@ -25,6 +26,9 @@ public class Vision extends SubsystemBase {
     private PhotonPoseEstimator poseEstimator1;
 
     private PhotonPoseEstimator poseEstimator2;
+
+    private Optional<EstimatedRobotPose> latestPose1 = Optional.empty();
+    private Optional<EstimatedRobotPose> latestPose2 = Optional.empty();
 
 
     public Vision() {
@@ -73,26 +77,56 @@ public class Vision extends SubsystemBase {
         );
     }
 
-    public Optional<EstimatedRobotPose> getEstimatedPose1() {
-        PhotonPipelineResult result = camera1.getLatestResult();
-        if (!result.hasTargets()) {
-            return Optional.empty();
-        } else if (result.getBestTarget().getPoseAmbiguity() > 0.2) {
-            return Optional.empty();
+    private Optional<EstimatedRobotPose> processCam(
+        PhotonCamera cam,
+        PhotonPoseEstimator poseEstimator
+    ){
+        Optional<EstimatedRobotPose> newestEstimate = Optional.empty();
+
+        for (PhotonPipelineResult result: cam.getAllUnreadResults()){
+            if (!result.hasTargets()){
+                continue;
+            }
+
+            if(result.getTargets().size() == 1 && result.getBestTarget().getPoseAmbiguity() > 0.2){
+                continue;
+            }
+
+            newestEstimate = poseEstimator.estimateCoprocMultiTagPose(result);
         }
-        return poseEstimator1.update(result);
+
+        return newestEstimate;
     }
 
-    public Optional<EstimatedRobotPose> getEstimatedPose2() {
-        PhotonPipelineResult result = camera2.getLatestResult();
-                if (!result.hasTargets()) {
-            return Optional.empty();
-   
-        } else if (result.getBestTarget().getPoseAmbiguity() > 0.2) {
-            return Optional.empty();
-        }
-        return poseEstimator2.update(result);
+
+    @Override
+public void periodic() {
+
+    Optional<EstimatedRobotPose> pose1 = processCam(camera1, poseEstimator1);
+    Optional<EstimatedRobotPose> pose2 = processCam(camera2, poseEstimator2);
+
+    if (pose1.isPresent()) {
+        latestPose1 = pose1;
     }
+
+    if (pose2.isPresent()) {
+        latestPose2 = pose2;
+    }
+}
+
+    public Optional<EstimatedRobotPose> getLatestPose1(){
+        return latestPose1;
+    }
+
+    public Optional<EstimatedRobotPose> getLatestPose2(){
+        return latestPose2;
+    }
+
+    
+
+
+  
+
 
     public void turnOffCams(){
         camera1.setDriverMode(true);
