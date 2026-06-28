@@ -1,6 +1,7 @@
 package frc.robot.subsystems.vision;
 
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,12 +21,13 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 public class Vision extends SubsystemBase {
     public String limelight1;
     public String limelight2;
-    private PhotonCamera camera1;
-    private PhotonCamera camera2;
+    private CameraWrapper camera1;
+    private CameraWrapper camera2;
+    private CameraWrapper[] cameraList;
 
-    private PhotonPoseEstimator poseEstimator1;
+    // private PhotonPoseEstimator poseEstimator1;
 
-    private PhotonPoseEstimator poseEstimator2;
+    // private PhotonPoseEstimator poseEstimator2;
 
     private Optional<EstimatedRobotPose> latestPose1 = Optional.empty();
     private Optional<EstimatedRobotPose> latestPose2 = Optional.empty();
@@ -34,12 +36,6 @@ public class Vision extends SubsystemBase {
     public Vision() {
         limelight1 = "limelight-joe";
         limelight2 = "limelight-greg";
-
-        camera1 = new PhotonCamera(limelight1);
-        camera2 = new PhotonCamera(limelight2);
-
-        AprilTagFieldLayout fieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltAndymark);
-
 
         //need to change these
         Transform3d robotToCam1 = new Transform3d(
@@ -64,62 +60,23 @@ public class Vision extends SubsystemBase {
             )
         );
 
-        poseEstimator1 = new PhotonPoseEstimator(
-            fieldLayout,
-            PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-            robotToCam1
-        );
-
-        poseEstimator2 = new PhotonPoseEstimator(
-            fieldLayout,
-            PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-            robotToCam2
-        );
+        cameraList[0] = new CameraWrapper(limelight1, robotToCam1);
+        cameraList[1] =  new CameraWrapper(limelight2, robotToCam2);
+     
     }
 
-    private Optional<EstimatedRobotPose> processCam(
-        PhotonCamera cam,
-        PhotonPoseEstimator poseEstimator
-    ){
-        Optional<EstimatedRobotPose> newestEstimate = Optional.empty();
 
-        for (PhotonPipelineResult result: cam.getAllUnreadResults()){
-            if (!result.hasTargets()){
-                continue;
+
+    public ArrayList<EstimatedRobotPose> getLatestPoses(){
+        ArrayList<EstimatedRobotPose> robotPoses = new ArrayList<>();
+        for (CameraWrapper camera: cameraList){
+            Optional<EstimatedRobotPose> pose = camera.getVisionMeasurements();
+
+            if(pose.isPresent()){
+                robotPoses.add(pose.get());
             }
-
-            if(result.getTargets().size() == 1 && result.getBestTarget().getPoseAmbiguity() > 0.2){
-                continue;
-            }
-
-            newestEstimate = poseEstimator.estimateCoprocMultiTagPose(result);
         }
-
-        return newestEstimate;
-    }
-
-
-    @Override
-public void periodic() {
-
-    Optional<EstimatedRobotPose> pose1 = processCam(camera1, poseEstimator1);
-    Optional<EstimatedRobotPose> pose2 = processCam(camera2, poseEstimator2);
-
-    if (pose1.isPresent()) {
-        latestPose1 = pose1;
-    }
-
-    if (pose2.isPresent()) {
-        latestPose2 = pose2;
-    }
-}
-
-    public Optional<EstimatedRobotPose> getLatestPose1(){
-        return latestPose1;
-    }
-
-    public Optional<EstimatedRobotPose> getLatestPose2(){
-        return latestPose2;
+        return robotPoses;
     }
 
     
