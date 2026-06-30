@@ -155,6 +155,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 ) {
     super(drivetrainConstants, modules);
 
+
+    //initalizing local vision with the Vision subsystem getting passed in
     this.vision = vision;
 
     if (Utils.isSimulation()) {
@@ -346,9 +348,11 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
         if(vision !=null){
 
+            //using Vision subsystem that was passed in to get all the latest poses as an Array List(best way to do this)
             ArrayList<EstimatedRobotPose> poses = vision.getLatestPoses();
 
 
+            //using the poses and looping through them. for each one, we are adding it as a vision measurement
             for (EstimatedRobotPose pose: poses){
                 addVisionMeasurement(pose.estimatedPose.toPose2d(), pose.timestampSeconds);
             }
