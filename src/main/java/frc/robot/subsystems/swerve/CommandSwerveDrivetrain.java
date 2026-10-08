@@ -3,11 +3,8 @@ package frc.robot.subsystems.swerve;
 import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Volts;
 
-import java.util.ArrayList;
 import java.util.Optional;
 import java.util.function.Supplier;
-
-import org.photonvision.EstimatedRobotPose;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
@@ -20,7 +17,6 @@ import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 
 import edu.wpi.first.math.Matrix;
-import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -30,13 +26,14 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj.smartdashboard.Field2d;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
+import frc.robot.subsystems.vision.LimelightCameraWrapper;
 import frc.robot.subsystems.vision.Vision;
+import limelight.networktables.PoseEstimate;
+import limelight.results.RawFiducial;
 
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements
@@ -47,9 +44,11 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private Notifier m_simNotifier = null;
     private double m_lastSimTime;
 
-    private SwerveDrivePoseEstimator limelightPose;
-    private Field2d field = new Field2d();
-    private Vision vision;
+    private LimelightCameraWrapper camera = new LimelightCameraWrapper("limelight-greg");
+
+    // private SwerveDrivePoseEstimator limelightPose;
+    // private Field2d field = new Field2d();
+    // private Vision vision;
 
     /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
     private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kZero;
@@ -157,7 +156,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
 
     //initalizing local vision with the Vision subsystem getting passed in
-    this.vision = vision;
+    // this.vision = vision;
 
     if (Utils.isSimulation()) {
         startSimThread();
@@ -346,74 +345,92 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             });
         }
 
-        if(vision !=null){
+            Optional<PoseEstimate> poseEstimateUpdated = camera.getPoseEstimate();
 
-            //using Vision subsystem that was passed in to get all the latest poses as an Array List(best way to do this)
-            ArrayList<EstimatedRobotPose> poses = vision.getLatestPoses();
+            // If the pose is present
+            poseEstimateUpdated.ifPresent((PoseEstimate poseEstimate) -> {
+                int count = 0;
+                for (int i = 0; i <= poseEstimateUpdated.get().tagCount - 1; i++) {
+                    RawFiducial rawFiducial = poseEstimateUpdated.get().rawFiducials[i];
+                    if(rawFiducial.distToCamera <= 3 && rawFiducial.ambiguity <= 0.6){
+                        count++;
+                    }
+                }
+
+                if (count == poseEstimateUpdated.get().tagCount - 1) {
+                    addVisionMeasurement(poseEstimate.pose.toPose2d(), poseEstimate.timestampSeconds);
+                }
+                
+        });
+
+    //     if(vision !=null){
+
+    //         //using Vision subsystem that was passed in to get all the latest poses as an Array List(best way to do this)
+    //         ArrayList<EstimatedRobotPose> poses = vision.getLatestPoses();
 
 
-            //using the poses and looping through them. for each one, we are adding it as a vision measurement
-            for (EstimatedRobotPose pose: poses){
-                addVisionMeasurement(pose.estimatedPose.toPose2d(), pose.timestampSeconds);
-            }
+    //         //using the poses and looping through them. for each one, we are adding it as a vision measurement
+    //         for (EstimatedRobotPose pose: poses){
+    //             addVisionMeasurement(pose.estimatedPose.toPose2d(), pose.timestampSeconds);
+    //         }
 
-            // Optional<EstimatedRobotPose> pose1 = vision.getLatestPose1();
-            // Optional<EstimatedRobotPose> pose2 = vision.getLatestPose2();
+    //         // Optional<EstimatedRobotPose> pose1 = vision.getLatestPose1();
+    //         // Optional<EstimatedRobotPose> pose2 = vision.getLatestPose2();
 
-            // if (pose1.isPresent() && pose2.isPresent()) {
-            //     EstimatedRobotPose est1 = pose1.get();
-            //     EstimatedRobotPose est2 = pose2.get();
+    //         // if (pose1.isPresent() && pose2.isPresent()) {
+    //         //     EstimatedRobotPose est1 = pose1.get();
+    //         //     EstimatedRobotPose est2 = pose2.get();
     
-            //     //apparently 20ms is same frame
-            //     if (Math.abs(est1.timestampSeconds - est2.timestampSeconds) < 0.02) {
+    //         //     //apparently 20ms is same frame
+    //         //     if (Math.abs(est1.timestampSeconds - est2.timestampSeconds) < 0.02) {
     
-            //         Pose2d p1 = est1.estimatedPose.toPose2d();
-            //         Pose2d p2 = est2.estimatedPose.toPose2d();
-            //         Rotation2d avgRotation = p1.getRotation().interpolate(p2.getRotation(), 0.5);
+    //         //         Pose2d p1 = est1.estimatedPose.toPose2d();
+    //         //         Pose2d p2 = est2.estimatedPose.toPose2d();
+    //         //         Rotation2d avgRotation = p1.getRotation().interpolate(p2.getRotation(), 0.5);
     
-            //         Pose2d avgPose = new Pose2d(
-            //             (p1.getX() + p2.getX()) / 2,
-            //             (p1.getY() + p2.getY()) / 2,
-            //             avgRotation
-            //         );
+    //         //         Pose2d avgPose = new Pose2d(
+    //         //             (p1.getX() + p2.getX()) / 2,
+    //         //             (p1.getY() + p2.getY()) / 2,
+    //         //             avgRotation
+    //         //         );
     
-            //         double avgTimestamp = (est1.timestampSeconds + est2.timestampSeconds) / 2.0;
+    //         //         double avgTimestamp = (est1.timestampSeconds + est2.timestampSeconds) / 2.0;
     
-            //         addVisionMeasurement(avgPose, avgTimestamp);
+    //         //         addVisionMeasurement(avgPose, avgTimestamp);
     
-            //     } else {
-            //         addVisionMeasurement(
-            //             est1.estimatedPose.toPose2d(),
-            //             est1.timestampSeconds
-            //         );
+    //         //     } else {
+    //         //         addVisionMeasurement(
+    //         //             est1.estimatedPose.toPose2d(),
+    //         //             est1.timestampSeconds
+    //         //         );
     
-            //         addVisionMeasurement(
-            //             est2.estimatedPose.toPose2d(),
-            //             est2.timestampSeconds
-            //         );
-            //     } 
-            // }
-            // else if (pose1.isPresent()) {
-            //     EstimatedRobotPose est = pose1.get();
-            //     addVisionMeasurement(
-            //         est.estimatedPose.toPose2d(),
-            //         est.timestampSeconds
-            //     );
-            // }
-            // else if (pose2.isPresent()) {
-            //     EstimatedRobotPose est = pose2.get();
-            //     addVisionMeasurement(
-            //         est.estimatedPose.toPose2d(),
-            //         est.timestampSeconds
-            //     );
-            // }
-        }
+    //         //         addVisionMeasurement(
+    //         //             est2.estimatedPose.toPose2d(),
+    //         //             est2.timestampSeconds
+    //         //         );
+    //         //     } 
+    //         // }
+    //         // else if (pose1.isPresent()) {
+    //         //     EstimatedRobotPose est = pose1.get();
+    //         //     addVisionMeasurement(
+    //         //         est.estimatedPose.toPose2d(),
+    //         //         est.timestampSeconds
+    //         //     );
+    //         // }
+    //         // else if (pose2.isPresent()) {
+    //         //     EstimatedRobotPose est = pose2.get();
+    //         //     addVisionMeasurement(
+    //         //         est.estimatedPose.toPose2d(),
+    //         //         est.timestampSeconds
+    //         //     );
+    //         // }
+    //     }
 
 
 
 
-        field.setRobotPose(getState().Pose);
-        SmartDashboard.putData("bot pos", field);
+    //     field.setRobotPose(getState().Pose);
+    //     SmartDashboard.putData("bot pos", field);
     }
 
     private void startSimThread() {
