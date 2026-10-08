@@ -31,7 +31,7 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 import frc.robot.subsystems.vision.LimelightCameraWrapper;
-import frc.robot.subsystems.vision.Vision;
+// import frc.robot.subsystems.vision.Vision;
 import limelight.networktables.PoseEstimate;
 import limelight.results.RawFiducial;
 
@@ -44,7 +44,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private Notifier m_simNotifier = null;
     private double m_lastSimTime;
 
-    private LimelightCameraWrapper camera = new LimelightCameraWrapper("limelight-greg");
+    public LimelightCameraWrapper camera = new LimelightCameraWrapper("limelight-greg");
 
     // private SwerveDrivePoseEstimator limelightPose;
     // private Field2d field = new Field2d();
@@ -147,23 +147,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
     configureAutoBuilder();
 }
-  public CommandSwerveDrivetrain(
-    Vision vision,
-    SwerveDrivetrainConstants drivetrainConstants,
-    SwerveModuleConstants<?, ?, ?>... modules
-) {
-    super(drivetrainConstants, modules);
 
-
-    //initalizing local vision with the Vision subsystem getting passed in
-    // this.vision = vision;
-
-    if (Utils.isSimulation()) {
-        startSimThread();
-    }
-
-    configureAutoBuilder();
-}
     /**
      * Constructs a CTRE SwerveDrivetrain using the specified constants.
      * <p>

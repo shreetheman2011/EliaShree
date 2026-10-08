@@ -7,17 +7,18 @@ package frc.robot;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import frc.robot.subsystems.vision.Vision;
+// import frc.robot.subsystems.vision.Vision;
+import frc.robot.subsystems.swerve.CommandSwerveDrivetrain;
 
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
-  private Vision vision;
+  // private Vision vision;
 
   private final RobotContainer m_robotContainer;
 
   public Robot() {
     m_robotContainer = new RobotContainer();
-    this.vision = m_robotContainer.getVision();
+    // this.vision = m_robotContainer.getVision();
   }
 
   @Override
@@ -27,7 +28,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void disabledInit() {
-    vision.turnOffCams();
+    // vision.turnOffCams();
   }
 
   @Override
@@ -35,7 +36,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void disabledExit() {
-    vision.turnOnCams();
+    // vision.turnOnCams();
   }
 
   @Override
