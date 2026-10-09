@@ -41,7 +41,7 @@ public class RobotContainer {
     shooter = new Shooter(drivetrain);
     robotManager = new RobotManager(intake, hopper, shooter);
 
-    // keybinds = new Keybindings(intake, hopper, shooter, robotManager, drivetrain, vision);
+    keybinds = new Keybindings(intake, hopper, shooter, robotManager, drivetrain);
 
     registerAutoCommands();
 
