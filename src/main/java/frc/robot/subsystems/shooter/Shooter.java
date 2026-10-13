@@ -1,6 +1,7 @@
 package frc.robot.subsystems.shooter;
 
 import java.util.Optional;
+import java.util.function.DoubleSupplier;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
@@ -37,11 +38,9 @@ public class Shooter extends SubsystemBase {
     private TalonFXConfiguration feederMotorConfig;
     private ShooterState shooterState;
     private ShotCalculator calculator;
-    private CommandSwerveDrivetrain drivetrain;
 
-
-    public Shooter( CommandSwerveDrivetrain drivetrain){
-        shooterMotorLeft=new TalonFX(15);
+    public Shooter() {
+        shooterMotorLeft = new TalonFX(15);
         shooterMotorRight = new TalonFX(16);
         angleMotor = new TalonFX(14);
         feederMotor = new TalonFX(13);
@@ -50,7 +49,6 @@ public class Shooter extends SubsystemBase {
         angleMotorConfig = new TalonFXConfiguration();
         shooterMotorsConfig = new TalonFXConfiguration();
         feederMotorConfig = new TalonFXConfiguration();
-        this.drivetrain = drivetrain;
 
         calculator = new ShotCalculator();
 
@@ -58,146 +56,146 @@ public class Shooter extends SubsystemBase {
 
     }
 
-    public void setVoltage(double voltage){
+    public void setVoltage(double voltage) {
         shooterMotorRight.setControl(new Follower(this.shooterMotorLeft.getDeviceID(), MotorAlignmentValue.Opposed));
         shooterMotorLeft.setVoltage(voltage);
     }
 
-    public void setAngle(double pos){
+    public void setAngle(double pos) {
         motionMagic.withPosition(pos);
         angleMotor.setControl(motionMagic);
     }
 
+    public Command setVoltageWithDistanceCMD(DoubleSupplier distance){
+        return Commands.runOnce(
+            () -> setVoltage(
+                    this.calculator.getShooterSetpoint(distance.getAsDouble()).rawVelocity()
+                )
+        );
+    }
 
-
-    public Command setVoltageCMD(double voltage){
+    public Command setVoltageCMD(double voltage) {
         return new InstantCommand(() -> setVoltage(voltage));
     }
 
-    
-
-    //replaced instant command and stuff in here to make it so that everything waits to shoot until the angle is reached
+    // replaced instant command and stuff in here to make it so that everything
+    // waits to shoot until the angle is reached
     public Command setAngleCMD(double pos) {
         return Commands.runOnce(() -> setAngle(pos))
-        .andThen(
-            Commands.waitUntil(
-                () -> Math.abs(
-                    angleMotor.getPosition().getValueAsDouble() - pos
-                ) < 0.05
-            )
-        );
-}
-
-    public Command spinFeederCMD(double voltage){
-        return new InstantCommand(() ->feederMotor.setVoltage(voltage));
+                .andThen(
+                        Commands.waitUntil(
+                                () -> Math.abs(
+                                        angleMotor.getPosition().getValueAsDouble() - pos) < 0.05));
     }
 
+    public Command spinFeederCMD(double voltage) {
+        return new InstantCommand(() -> feederMotor.setVoltage(voltage));
+    }
 
-
-
-    public Command getShootingCMD (){
+    public Command getShootingCMD() {
         return Commands.sequence(
-            setAngleCMD(1), //todo: change angle, feeder, and shooter main motor voltages 
-            setVoltageCMD(5),
-            Commands.waitSeconds(0.5),
-            spinFeederCMD(5),
-            new InstantCommand(() -> DogLog.logFault("Shooter command"))).withName("Get shooting command");
+                setAngleCMD(1), // todo: change angle, feeder, and shooter main motor voltages
+                setVoltageCMD(5),
+                Commands.waitSeconds(0.5),
+                spinFeederCMD(5),
+                new InstantCommand(() -> DogLog.logFault("Shooter command"))).withName("Get shooting command");
     }
 
-    public Command stopShootingCMD (){
+    public Command stopShootingCMD() {
         return Commands.parallel(
-            setVoltageCMD(0),
-            setAngleCMD(0), 
-            spinFeederCMD(0),
-            new InstantCommand(() -> DogLog.logFault("Stop shooting command"))).withName("Stop Shooting Command");
+                setVoltageCMD(0),
+                setAngleCMD(0),
+                spinFeederCMD(0),
+                new InstantCommand(() -> DogLog.logFault("Stop shooting command"))).withName("Stop Shooting Command");
     }
 
+    // public Command getAutoShootingCMD(){
+    // return Commands.sequence(
+    // Commands.runOnce(() -> {
+    // Pose2d robotPose = drivetrain.getState().Pose;
+    // double distanceMeters = 2.5;
 
+    // try {
+    // AprilTagFieldLayout layout =
+    // AprilTagFields.k2026RebuiltAndymark.loadAprilTagLayoutField();
 
-    public Command getAutoShootingCMD(){
-        return Commands.sequence(
-            Commands.runOnce(() -> {
-                Pose2d robotPose = drivetrain.getState().Pose;
-                double distanceMeters = 2.5;
+    // int tagId = (DriverStation.getAlliance().orElse(Alliance.Blue) ==
+    // Alliance.Red) ? 10 : 25;
 
-                try {
-                    AprilTagFieldLayout layout = AprilTagFields.k2026RebuiltAndymark.loadAprilTagLayoutField();
+    // Optional<Pose3d> tagPose3d = layout.getTagPose(tagId);
 
-                    int tagId = (DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red) ? 10 : 25;
+    // if(tagPose3d.isPresent()){
+    // Pose2d tagPose = tagPose3d.get().toPose2d();
 
-                    Optional<Pose3d> tagPose3d = layout.getTagPose(tagId);
+    // distanceMeters =
+    // robotPose.getTranslation().getDistance(tagPose.getTranslation());
+    // }
+    // } catch (Exception e) {
+    // distanceMeters= 2.5;
+    // }
 
-                    if(tagPose3d.isPresent()){
-                        Pose2d tagPose = tagPose3d.get().toPose2d();
+    // ShooterData setpoint = calculator.getShooterSetpoint(distanceMeters);
 
-                        distanceMeters = robotPose.getTranslation().getDistance(tagPose.getTranslation());
-                    }
-                } catch (Exception e) {
-                    distanceMeters= 2.5;
-                }
+    // double targetRotations = setpoint.getRotations(); //sounds confusing, but its
+    // for angle not rps lol
+    // double targetRPS = setpoint.getRPS();
+    // double targetVoltage = (targetRPS / 80.0) * 12.0;
 
-                ShooterData setpoint = calculator.getShooterSetpoint(distanceMeters);
+    // setAngle(targetRotations);
+    // setVoltage(targetVoltage);
+    // }),
 
-                double targetRotations = setpoint.getRotations(); //sounds confusing, but its for angle not rps lol
-                double targetRPS = setpoint.getRPS();
-                double targetVoltage = (targetRPS / 80.0) * 12.0;
+    // Commands.waitUntil(() -> {
 
-                setAngle(targetRotations);
-                setVoltage(targetVoltage);
-            }),
+    // Pose2d robotPose = drivetrain.getState().Pose;
+    // double distanceMeters = 2.5;
 
-            Commands.waitUntil(() -> {
+    // try {
+    // AprilTagFieldLayout layout =
+    // AprilTagFields.k2026RebuiltAndymark.loadAprilTagLayoutField();
 
-                Pose2d robotPose = drivetrain.getState().Pose;
-                double distanceMeters  = 2.5;
+    // int tagId = (DriverStation.getAlliance().orElse(Alliance.Blue) ==
+    // Alliance.Red) ? 10 : 25;
 
-                try {
-                    AprilTagFieldLayout layout = AprilTagFields.k2026RebuiltAndymark.loadAprilTagLayoutField();
+    // Optional<Pose3d> tagPose3d = layout.getTagPose(tagId);
 
-                    int tagId = (DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red) ? 10 : 25;
+    // if(tagPose3d.isPresent()){
+    // Pose2d tagPose = tagPose3d.get().toPose2d();
 
-                    Optional<Pose3d> tagPose3d = layout.getTagPose(tagId);
+    // distanceMeters =
+    // robotPose.getTranslation().getDistance(tagPose.getTranslation());
+    // }
+    // } catch (Exception e) {
+    // distanceMeters= 2.5;
+    // }
 
-                    if(tagPose3d.isPresent()){
-                        Pose2d tagPose = tagPose3d.get().toPose2d();
+    // double targetRotations =
+    // calculator.getShooterSetpoint(distanceMeters).getRotations();
 
-                        distanceMeters = robotPose.getTranslation().getDistance(tagPose.getTranslation());
-                    }
-                } catch (Exception e) {
-                    distanceMeters= 2.5;
-                }
+    // return Math.abs(angleMotor.getPosition().getValueAsDouble() -
+    // targetRotations) < 0.05;
+    // }),
 
-                double targetRotations = calculator.getShooterSetpoint(distanceMeters).getRotations();
+    // Commands.waitSeconds(0.5),
+    // spinFeederCMD(5),
+    // new InstantCommand(() -> DogLog.logFault("Auto shooter"))
 
-                return Math.abs(angleMotor.getPosition().getValueAsDouble() - targetRotations) < 0.05;
-            }),
+    // ).withName("Auto shooting cmd");
+    // }
 
-            Commands.waitSeconds(0.5),
-            spinFeederCMD(5),
-            new InstantCommand(() -> DogLog.logFault("Auto shooter"))
-
-        ).withName("Auto shooting cmd");
-    }
-
-
-
-
-    public Command setState(ShooterState state){
+    public Command setState(ShooterState state) {
         this.shooterState = state;
-        switch(state) {
+        switch (state) {
             case SHOOTING:
                 return getShootingCMD();
             case IDLE:
                 return stopShootingCMD();
             case AUTO_SHOOTING:
-                return getAutoShootingCMD();
+                return Commands.none();
             default:
                 return stopShootingCMD();
         }
     }
-
-
-
 
     public void configureMotors() {
         angleMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
@@ -215,16 +213,14 @@ public class Shooter extends SubsystemBase {
 
         shooterMotorsConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
 
-
         shooterMotorsConfig.MotorOutput.withInverted(InvertedValue.CounterClockwise_Positive);
 
-        shooterMotorsConfig.TorqueCurrent.PeakForwardTorqueCurrent = .0; //todo: check this
+        shooterMotorsConfig.TorqueCurrent.PeakForwardTorqueCurrent = .0; // todo: check this
         shooterMotorsConfig.TorqueCurrent.PeakReverseTorqueCurrent = -40.0;
-        shooterMotorsConfig.MotorOutput.PeakForwardDutyCycle = 0.0; //todo: check this
+        shooterMotorsConfig.MotorOutput.PeakForwardDutyCycle = 0.0; // todo: check this
         shooterMotorsConfig.MotorOutput.PeakReverseDutyCycle = -1.0;
 
         feederMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
-
 
         feederMotor.getConfigurator().apply(feederMotorConfig);
 
@@ -234,7 +230,7 @@ public class Shooter extends SubsystemBase {
     }
 
     @Override
-    public void periodic(){
+    public void periodic() {
         DogLog.log("Shooter state", shooterState);
     }
 }

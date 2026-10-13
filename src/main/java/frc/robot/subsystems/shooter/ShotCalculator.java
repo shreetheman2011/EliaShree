@@ -99,7 +99,7 @@ public class ShotCalculator {
     public ShooterData getShooterSetpoint(double distanceMeters){
         double clampedDistance = Math.max(this.minDistance, Math.min(distanceMeters, this.maxDistance));
         //clamps the distance off so it doesnt map out of bounds
-
+        
         return Optional.ofNullable(this.targetMap.get(clampedDistance))
                        .orElseGet(() -> new ShooterData(0.0, 0.0));
     
