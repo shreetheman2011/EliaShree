@@ -31,10 +31,8 @@ public class MultiSub {
 
     public static Command autoShootCmd(Intake intake, Hopper hopper, Shooter shooter, Vision vision,
             CommandSwerveDrivetrain driveTrain, ShotCalculator shotCalculator) {
-        ShooterData shooterSetpoint = shotCalculator.getShooterSetpoint(0);
         return Commands.sequence(
-                shooter.setVoltageWithDistanceCMD(driveTrain.distance) // should be voltage
-        );
+                shooter.setVoltageWithDistancePIDCMD(() -> driveTrain.getDistanceToHub()));
     }
 
 }

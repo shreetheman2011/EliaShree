@@ -14,6 +14,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import dev.doglog.DogLog;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -38,6 +39,7 @@ public class Shooter extends SubsystemBase {
     private TalonFXConfiguration feederMotorConfig;
     private ShooterState shooterState;
     private ShotCalculator calculator;
+    private PIDController pidController;
 
     public Shooter() {
         shooterMotorLeft = new TalonFX(15);
@@ -49,6 +51,7 @@ public class Shooter extends SubsystemBase {
         angleMotorConfig = new TalonFXConfiguration();
         shooterMotorsConfig = new TalonFXConfiguration();
         feederMotorConfig = new TalonFXConfiguration();
+        pidController = new PIDController(0, 0, 0); // todo: change these later
 
         calculator = new ShotCalculator();
 
@@ -66,12 +69,26 @@ public class Shooter extends SubsystemBase {
         angleMotor.setControl(motionMagic);
     }
 
-    public Command setVoltageWithDistanceCMD(DoubleSupplier distance){
-        return Commands.runOnce(
-            () -> setVoltage(
-                    this.calculator.getShooterSetpoint(distance.getAsDouble()).rawVelocity()
-                )
-        );
+    // public Command setVoltageWithDistanceCMD(DoubleSupplier distance) {
+    // return Commands.runOnce(
+    // () -> setVoltage(
+    // this.calculator.getShooterSetpoint(distance.getAsDouble()).rawVelocity()));
+    // }
+
+    public Command setVoltageWithDistancePIDCMD(DoubleSupplier distance) {
+
+        return Commands.run(
+                () -> {
+                    double setPoint = calculator.getShooterSetpoint(distance.getAsDouble()).rawVelocity();
+                    double voltage = pidController.calculate(
+                            shooterMotorLeft.getVelocity().getValueAsDouble() - setPoint,
+                            setPoint);
+                    setVoltage(voltage);
+
+                    Commands.waitSeconds(2);
+                    
+
+                });
     }
 
     public Command setVoltageCMD(double voltage) {

@@ -38,7 +38,7 @@ public class RobotContainer {
     // vision = new Vision();
     drivetrain = new CommandSwerveDrivetrain( TunerConstants.DrivetrainConstants, TunerConstants.FrontLeft, TunerConstants.FrontRight, TunerConstants.BackLeft, TunerConstants.BackRight);
 
-    shooter = new Shooter(drivetrain);
+    shooter = new Shooter();
     robotManager = new RobotManager(intake, hopper, shooter);
 
     keybinds = new Keybindings(intake, hopper, shooter, robotManager, drivetrain);
